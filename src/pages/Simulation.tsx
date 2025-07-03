@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -9,6 +9,7 @@ const Simulation = () => {
   const [isRecording, setIsRecording] = useState(false);
   const [currentMessage, setCurrentMessage] = useState(0);
   const [showTranscript, setShowTranscript] = useState(false);
+  const agentRef = useRef<HTMLDivElement>(null);
 
   const conversation = [
     {
@@ -42,6 +43,25 @@ const Simulation = () => {
     return () => clearTimeout(timer);
   }, []);
 
+  useEffect(() => {
+    // Inject the script only once
+    const scriptId = "elevenlabs-convai-script";
+    if (!document.getElementById(scriptId)) {
+      const script = document.createElement("script");
+      script.src = "https://unpkg.com/@elevenlabs/convai-widget-embed";
+      script.async = true;
+      script.type = "text/javascript";
+      script.id = scriptId;
+      document.body.appendChild(script);
+    }
+    // Inject the custom element
+    if (agentRef.current && !agentRef.current.querySelector("elevenlabs-convai")) {
+      const widget = document.createElement("elevenlabs-convai");
+      widget.setAttribute("agent-id", "agent_01jz5x4fnwfwg9hqe0g6n0j82p");
+      agentRef.current.appendChild(widget);
+    }
+  }, []);
+
   const toggleRecording = () => {
     setIsRecording(!isRecording);
   };
@@ -64,75 +84,8 @@ const Simulation = () => {
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             
-            {/* Main Interaction Area */}
-            <div className="lg:col-span-2">
-              <Card className="p-8 mb-6 animate-fade-in">
-                <div className="text-center mb-8">
-                  <div className="relative inline-block">
-                    <div className="w-32 h-32 bg-gradient-accent rounded-full flex items-center justify-center text-4xl mb-4 mx-auto animate-pulse">
-                      🦈
-                    </div>
-                    {isRecording && (
-                      <div className="absolute -top-2 -right-2 w-8 h-8 bg-red-500 rounded-full animate-pulse flex items-center justify-center">
-                        <div className="w-3 h-3 bg-white rounded-full"></div>
-                      </div>
-                    )}
-                  </div>
-                  <h2 className="text-xl font-semibold mb-2">AI Investor is Speaking</h2>
-                  <p className="text-muted-foreground">
-                    "Let's dive into your business model. How do you plan to monetize this solution?"
-                  </p>
-                </div>
-
-                <div className="flex justify-center gap-4">
-                  <Button
-                    variant={isRecording ? "destructive" : "accent"}
-                    size="lg"
-                    onClick={toggleRecording}
-                    className="w-20 h-20 rounded-full"
-                  >
-                    {isRecording ? <MicOff className="w-8 h-8" /> : <Mic className="w-8 h-8" />}
-                  </Button>
-                  
-                  <Button variant="outline" size="lg" className="w-20 h-20 rounded-full">
-                    <Pause className="w-8 h-8" />
-                  </Button>
-                  
-                  <Button variant="outline" size="lg" className="w-20 h-20 rounded-full">
-                    <SkipForward className="w-8 h-8" />
-                  </Button>
-                </div>
-
-                <div className="mt-6 text-center">
-                  <p className="text-sm text-muted-foreground">
-                    {isRecording ? "🎤 Recording your response..." : "Click the microphone to respond"}
-                  </p>
-                </div>
-              </Card>
-
-              {/* Live Audio Visualization */}
-              <Card className="p-6 animate-fade-in" style={{ animationDelay: '0.2s' }}>
-                <h3 className="font-semibold mb-4">Audio Levels</h3>
-                <div className="flex items-center gap-2 h-16">
-                  {Array.from({ length: 20 }).map((_, index) => (
-                    <div
-                      key={index}
-                      className={`flex-1 bg-gradient-accent rounded-sm transition-all duration-200 ${
-                        isRecording ? 'animate-pulse' : 'opacity-30'
-                      }`}
-                      style={{
-                        height: isRecording ? `${Math.random() * 100}%` : '20%',
-                        animationDelay: `${index * 0.1}s`
-                      }}
-                    ></div>
-                  ))}
-                </div>
-              </Card>
-            </div>
-
-            {/* Sidebar */}
-            <div className="space-y-6">
-              
+            {/* Left 2/3: All Cards */}
+            <div className="lg:col-span-2 space-y-6">
               {/* Real-time Metrics */}
               <Card className="p-6 animate-fade-in" style={{ animationDelay: '0.4s' }}>
                 <h3 className="font-semibold mb-4">Live Metrics</h3>
@@ -224,6 +177,11 @@ const Simulation = () => {
                   </Link>
                 </div>
               </Card>
+            </div>
+
+            {/* Right 1/3: Agent Widget */}
+            <div className="hidden lg:block lg:col-span-1">
+              <div ref={agentRef} className="h-full flex items-center justify-center" />
             </div>
           </div>
         </div>
